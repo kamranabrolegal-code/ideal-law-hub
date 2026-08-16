@@ -39,7 +39,7 @@ function ServiceDetail() {
         <PageHeader
           title={isLoading ? "Loading service…" : "Service not found"}
           description={
-            isLoading ? undefined : "This service is not currently listed. Please view all services."
+            isLoading ? "" : "This service is not currently listed. Please view all services."
           }
         />
         <div className="mx-auto max-w-7xl px-4 py-20 lg:px-8">
