@@ -1,7 +1,15 @@
 import fs from "fs";
 import path from "path";
 
-const candidates = [".output/public", "dist", "build", "out"];
+const candidates = [
+  ".output/public",
+  "dist",
+  "dist/client",
+  "build",
+  "out",
+  "docs",
+  "public"
+];
 const root = process.cwd();
 
 const dir = candidates.find((d) => {
