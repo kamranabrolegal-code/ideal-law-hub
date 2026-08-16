@@ -1,44 +1,37 @@
-Name: Deploy to GitHub Pages
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 18
+      cache: 'npm'
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  - name: Install
+    run: npm ci
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+  - name: Build
+    run: npm run build
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run build
-      
-      # Agar output .output/public mein banti hai (TanStack Start standard), toh ye copy karega:
-      - name: Create SPA fallback for GitHub Pages
-        run: |
-          if [ -d ".output/public" ]; then
-            cp .output/public/index.html .output/public/404.html
-          elif [ -d "dist" ]; then
-            cp dist/index.html dist/404.html
-          fi
+  - name: Copy fallback 404 (safety)
+    run: node scripts/copy-404.js || true
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          # Yeh automatically check kar lega ke folder 'dist' hai ya '.output/public'
-          path: ${{ hashFiles('dist/index.html') && 'dist' || '.output/public' }}
+  - name: Determine publish directory
+    id: find_publish_dir
+    run: |
+      if [ -d ".output/public" ]; then echo "PUBLISH_DIR=.output/public" >> $GITHUB_ENV
+      elif [ -d "dist" ]; then echo "PUBLISH_DIR=dist" >> $GITHUB_ENV
+      elif [ -d "docs" ]; then echo "PUBLISH_DIR=docs" >> $GITHUB_ENV
+      elif [ -d "build" ]; then echo "PUBLISH_DIR=build" >> $GITHUB_ENV
+      else
+        echo "No publish directory found. Looking for common directories failed.";
+        ls -la;
+        exit 1;
+      fi
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+  - name: Show publish dir
+    run: echo "Publish directory: $PUBLISH_DIR"
+
+  - name: Deploy to gh-pages
+    uses: peaceiris/actions-gh-pages@v4
+    with:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+      publish_dir: ${{ env.PUBLISH_DIR }}
+      keep_files: false
