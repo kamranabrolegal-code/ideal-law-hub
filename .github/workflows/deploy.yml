@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+Name: Deploy to GitHub Pages
 
 on:
   push:
@@ -19,13 +19,19 @@ jobs:
       - run: bun install
       - run: bun run build
       
-      # TanStack Start / Vite static build ki output directory 'dist' hoti hai
+      # Agar output .output/public mein banti hai (TanStack Start standard), toh ye copy karega:
       - name: Create SPA fallback for GitHub Pages
-        run: cp dist/index.html dist/404.html
+        run: |
+          if [ -d ".output/public" ]; then
+            cp .output/public/index.html .output/public/404.html
+          elif [ -d "dist" ]; then
+            cp dist/index.html dist/404.html
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          # Yeh automatically check kar lega ke folder 'dist' hai ya '.output/public'
+          path: ${{ hashFiles('dist/index.html') && 'dist' || '.output/public' }}
 
   deploy:
     needs: build
